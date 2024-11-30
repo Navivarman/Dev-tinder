@@ -1,32 +1,27 @@
 const express = require('express');
-const {adminAuth,userAuth} = require('./middlewares/auth');
+const {connectDB} = require('./config/database')
+const User = require('./models/User');
 const app = express();
-
-app.use("/user/data",userAuth,(req,res,) =>{
-        res.send("User data is sent")
-})
-app.use("/admin/getAllData",adminAuth,(req,res) =>{
-    res.send("Admin data is sent");
-})
-app.use("/user/login",(req,res) =>{
-    res.send("User login is sent");
-})
-
-
-app.use("/test",(req,res) =>{
+app.post("/signup", async(req,res) =>{
+    const user = new User({
+        firstName:"Navi",
+        lastName:"Varman",
+        email:"navi@gmail.com",
+        password:"123456",
+         })
     try{
-        throw new Error("Test error");
-        res.send("successful")
+        await user.save();
+        res.send("Successfully posted")
     }catch(err){
-        res.status(500).send({message:err.message})
+        res.status(400).send("Error :",err)
     }
 })
-
-app.use("/",(err,req,res,next) =>{
-    if(err){
-        res.status(500).send("Something went wrong");
-    }
+connectDB().then(() =>{
+    console.log("Database is connected successfully");
+    app.listen(7777,() =>{
+        console.log("Server is running on port 7777");
+    });
+}).catch((err) =>{
+    console.log("Error in connecting to the database");
 })
 
-
-app.listen(7777);
