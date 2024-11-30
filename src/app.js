@@ -1,29 +1,14 @@
 const express = require('express');
+const {adminAuth,userAuth} = require('./middlewares/auth');
 const app = express();
 
-app.get("/test",(req,res) =>{
-    res.send({firstname:"navi" ,lastname:"varman"})
+app.use("/user/data",userAuth,(req,res,) =>{
+        res.send("User data is sent")
 })
-app.post("/test",(req,res) =>{
-    res.send("POST is successfully executed")
+app.use("/admin/getAllData",adminAuth,(req,res) =>{
+    res.send("Admin data is sent");
 })
-app.patch("/test",(req,res) =>{
-    res.send("PATCH is successfully executed")
-})
-app.put("/test",(req,res) =>{
-    res.send("PUT is successfully executed")
-})
-app.delete("/test",(req,res) =>{
-    res.send("DELETE is successfully executed")
-})
-app.use("/test",(req,res) =>{
-    res.send("Hello Test ");
-})
-
-app.use('/hello',(req,res) =>{
-    res.send("Hello Hello");
-})
-app.use('/',(req,res) =>{
-    res.send("Hello Home page");
+app.use("/user/login",(req,res) =>{
+    res.send("User login is sent");
 })
 app.listen(7777);
