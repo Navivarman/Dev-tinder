@@ -5,14 +5,34 @@ const app = express();
 app.use(express.json())
 app.post("/signup", async(req,res) =>{
     const user = new User(req.body)
-    console.log(user)
+    const data = req.body;
+
+
     try{
+        
+        const ALLOEWED_POSTFIELDS = ["firstName","lastName","email","password","gender","age","skills"];
+        const isAllowedPost = Object.keys(data).every(k => ALLOEWED_POSTFIELDS.includes(k))
+        console.log(isAllowedPost)
+        if(isAllowedPost & data?.skills.length < 5){
+
         await user.save();
         res.send("Successfully posted")
+        }else{
+            res.status(400).send("Invalid request")
+        }
+
     }catch(err){
-        res.status(404).send("Error :"+ err.getMessage)
+               console.error(err); 
+        if (err.name === "ValidationError") {
+            const errorMessages = Object.values(err.errors).map(e => e.message);
+            res.status(400).send({ error: "Validation Error", messages: errorMessages });
+        } else {
+            res.status(500).send({ error: "Internal Server Error", message: err.message });
+        }
     }
-})
+}) 
+
+
 
 app.get("/user",async(req,res) =>{
     try{
@@ -44,12 +64,18 @@ app.delete("/delete", async(req,res) =>{
 })
 
 app.patch("/update",async(req,res) =>{
+    const Id = req.body.userId;
+
     try{
-            const Id = req.body.userId;
-            const data = req.body;
-            console.log(data);
-            const user = await User.findByIdAndUpdate(Id,data,{runValidators: true});
-            res.send("User updated");
+        const data = req.body;
+        const ALLOWED_PATCHFIELDS = ["age"]
+            const isAllowed = Object.keys(data).every(key => ALLOWED_PATCHFIELDS.includes(key));
+            console.log(isAllowed)
+            if(!isAllowed){
+                const user = await User.findByIdAndUpdate(Id,data,{runValidators: true});
+                res.send("User updated");
+            }
+
     }catch(err){
         res.status(404).send("Something went wrong")
     }
