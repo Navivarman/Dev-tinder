@@ -5,11 +5,12 @@ const app = express();
 app.use(express.json())
 app.post("/signup", async(req,res) =>{
     const user = new User(req.body)
+    console.log(user)
     try{
         await user.save();
         res.send("Successfully posted")
     }catch(err){
-        res.status(400).send("Error :",err)
+        res.status(404).send("Error :"+ err.getMessage)
     }
 })
 
@@ -31,6 +32,28 @@ app.get("/feed",async(req,res) =>{
     }catch(err){
         res.status(400).send("Something went wrong")
     }
+
+app.delete("/delete", async(req,res) =>{
+    try{
+            const Id = req.body.userId;
+             const user = await User.findByIdAndDelete(Id);
+            res.send("User deleted");
+    }catch(err){
+        res.status(400).send("Something went wrong")
+    }
+})
+
+app.patch("/update",async(req,res) =>{
+    try{
+            const Id = req.body.userId;
+            const data = req.body;
+            console.log(data);
+            const user = await User.findByIdAndUpdate(Id,data,{runValidators: true});
+            res.send("User updated");
+    }catch(err){
+        res.status(404).send("Something went wrong")
+    }
+})
 
 })
 connectDB().then(() =>{
