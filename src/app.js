@@ -1,16 +1,28 @@
 const express = require('express');
 const {connectDB} = require('./config/database')
 const User = require('./models/user');
+const validator = require('validator')
+const { validateSingup } = require('./utils/validate');
+const bcrypt = require('bcrypt')
 const app = express();
 app.use(express.json())
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
+app.use(cookieParser()) 
+const{userAuth} = require('./middlewares/auth');
 app.post("/signup", async(req,res) =>{
-    const user = new User(req.body)
-    const data = req.body;
-
-
+    
     try{
-        
-        const ALLOEWED_POSTFIELDS = ["firstName","lastName","email","password","gender","age","skills"];
+        validateSingup(req)
+        const {firstName,lastName,email,password} = req.body;
+        const passwordHash = await bcrypt.hash(password, 10);
+        const user = new User({firstName,lastName,email,password:passwordHash})
+        await user.save();
+        const token = await jwt.sign({_id : user._id},"DEV@Tinder$790",{expiresIn : "7d"})
+        res.cookie("token",token,{expires : new Date(Date.now() + 900000)})
+        res.send("Successfully posted")
+
+        /* const ALLOEWED_POSTFIELDS = ["firstName","lastName","email","password","gender","age","skills"];
         const isAllowedPost = Object.keys(data).every(k => ALLOEWED_POSTFIELDS.includes(k))
         console.log(isAllowedPost)
         if(isAllowedPost & data?.skills.length < 5){
@@ -20,7 +32,7 @@ app.post("/signup", async(req,res) =>{
         }else{
             res.status(400).send("Invalid request")
         }
-
+ */
     }catch(err){
                console.error(err); 
         if (err.name === "ValidationError") {
@@ -32,7 +44,40 @@ app.post("/signup", async(req,res) =>{
     }
 }) 
 
+app.get("/profile",userAuth ,async(req,res) =>{
+    try{
+        const user = req.user
+        res.send(user)
+    }catch(err){
+        if(err.name == "ValidationError"){
+            const errorMessages = Object.values(err.errors).map(e => e.message )
+            res.status(400).send({ error: "Validation Error", messages: errorMessages });
+        }else{
+            res.status(500).send({ error: "Internal server error", message : err.message });
+        }
+    }
+})
 
+app.post("/sendRequest",userAuth,async(req,res) =>{
+    const user = req.user
+    res.send(user.firstName+" sent the request")
+})
+
+app.post("/login",async(req,res) =>{
+    const {email,password} = req.body;
+    if(!validator.isEmail(email)){
+        throw new Error("Invalid email")
+    }
+    const user = await User.findOne({email:email})
+    if(!user){
+        throw new Error("User not found")
+    }
+    const isValidPassword = await bcrypt.compare(password,user.password)
+    if(!isValidPassword){
+        throw new Error("Invalid password")
+    }
+    res.send("Login Success")
+})
 
 app.get("/user",async(req,res) =>{
     try{
@@ -77,7 +122,11 @@ app.patch("/update",async(req,res) =>{
             }
 
     }catch(err){
-        res.status(404).send("Something went wrong")
+       /*  res.status(404).send("Something went wrong") */
+       if(err.name == "Validation Error"){
+        const errorMessages = Object.values(err.errors).map(error => error.message)
+        res.status(400).send({error : "Validation Error",message : errorMessages});
+       }
     }
 })
 
