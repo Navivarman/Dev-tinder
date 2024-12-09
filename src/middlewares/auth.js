@@ -9,13 +9,14 @@ const userAuth = async(req,res,next) =>{
         const decodeMessage = await jwt.verify(token,"DEV@Tinder$790");
         const{_id} = decodeMessage
         if(!_id){
-            res.send("Invalid ID")
+            return res.status(401).json({ error: "Invalid token ID" });
         }
          const user = await User.findById(_id);
          if(!user){
-            res.send("User not found")
+            return res.status(404).json({ error: "User not found" });
          }
          req.user = user
+         
         next()
     }catch(err){
         res.status(401).send({error:err.message})

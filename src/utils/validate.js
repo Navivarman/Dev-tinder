@@ -1,7 +1,10 @@
 const validator = require('validator')
 const validateSingup = (req) =>{
     const {firstName,lastName,email,password} = req.body;
-    if(firstName.length < 4 ){
+    if(firstName.length < 3 ){
+        throw new Error('First name must be at least 4 characters long');
+    }
+    else if(lastName.length < 3 ){
         throw new Error('First name must be at least 4 characters long');
     }
     else if(!validator.isEmail(email)){
@@ -12,4 +15,15 @@ const validateSingup = (req) =>{
     }
 }
 
-module.exports = {validateSingup};
+const validateEditFields = (req) =>{
+    try{
+        const allowedFields = ["firstName","lastName","description","skills"]
+        const isAllowedFields = Object.keys(req.body).every((fields) => allowedFields.includes(fields))
+        return isAllowedFields
+    }catch(err){
+        res.status(402).send("error");
+    }
+ 
+}
+
+module.exports = {validateSingup , validateEditFields};
